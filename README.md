@@ -13,7 +13,8 @@ Simple CLI tool to clean datasets.
 pip install -r requirements.txt
 ```
 
-A sample dataset (`cafe_sales.csv`) is included in the `data/` folder for testing purposes. <a href="https://www.kaggle.com/datasets/ahmedmohamed2003/cafe-sales-dirty-data-for-cleaning-training/data" target="_blank">Source (Kaggle)</a>
+A sample dataset (`cafe_sales.csv`) is included in the `data/` folder for testing purposes.
+[Source (Kaggle)](https://www.kaggle.com/datasets/ahmedmohamed2003/cafe-sales-dirty-data-for-cleaning-training/data)
 
 ## Usage
 ```bash
