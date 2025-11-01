@@ -2,87 +2,86 @@ import pandas as pd
 import numpy as np
 import unicodedata
 import shutil
-import time
 import re
 
 def clean_data(
     df,
     *,
-    outliers='cap',
+    outliers="cap",
     normalize_cols=True,
     clean_text=True,
     categorical_mapping=None,
     auto_outlier_detect=True,
-    verbose=True
+    verbose=True,
 ):
     """
     Master cleaning pipeline: sequentially applies cleaning operations to the input DataFrame.
-
-    Parameters
-    ----------
-    df : pd.DataFrame
-        Raw input dataset.
-    outliers : {'cap', 'remove', None}, default='cap'
-        Outlier handling strategy.
-    normalize_cols : bool, default=True
-        Normalize column names (strip, lowercase, etc.).
-    clean_text : bool, default=True
-        Clean and standardize text fields.
-    categorical_mapping : dict, optional
-        Mapping dictionary for category normalization.
-    auto_outlier_detect : bool, default=True
-        Automatically decide IQR vs Z-score for outlier handling.
-    verbose : bool, default=True
-        Print cleaning progress and summary information.
     """
+
+    from src.utils import Spinner
+    import time
 
     start = time.time()
 
     if df is None or df.empty:
-        if verbose:
-            print("⚠️ No data provided or DataFrame is empty.")
+        print("No data provided or DataFrame is empty.")
         return df
 
-    if verbose:
-        print("\n--- Cleaning Data ---")
+    spinner = None
+    message = "Cleaning data"
+    if not verbose:
+        spinner = Spinner(message)
+        spinner.start()
+    else:
+        print(f"\n{message} ...")
 
-    # ---------- 1️. Remove duplicates ----------
-    df = remove_duplicates(df, verbose=verbose)
+    try:
+        df = remove_duplicates(df, verbose=verbose)
 
-    # ---------- 2️. Normalize column names ----------
-    if normalize_cols:
-        df = normalize_column_names(df, verbose=verbose)
+        if normalize_cols:
+            df = normalize_column_names(df, verbose=verbose)
 
-    # ---------- 3️. Clean text & categorical values ----------
-    if clean_text:
-        df = clean_text_columns(
-            df,
-            lowercase=True,
-            verbose=verbose,
-            categorical_mapping=categorical_mapping
-        )
+        if clean_text:
+            df = clean_text_columns(
+                df,
+                lowercase=True,
+                verbose=verbose,
+                categorical_mapping=categorical_mapping,
+            )
 
-    # ---------- 4. Standardize data formats ----------
-    df = standardize_formats(df, verbose=verbose)
+        df = standardize_formats(df, verbose=verbose)
 
-    # ---------- 5. Handle outliers ----------
-    if outliers:
-        df = handle_outliers(
-            df,
-            method=outliers,
-            auto_detect=auto_outlier_detect,
-            verbose=verbose
-        )
+        if outliers:
+            df = handle_outliers(
+                df,
+                method=outliers,
+                auto_detect=auto_outlier_detect,
+                verbose=verbose,
+            )
 
-    # ---------- 6. Fill missing values ----------
-    df = fill_missing_values(df, verbose=verbose)
+        df = fill_missing_values(df, verbose=verbose)
 
-    # ---------- Summary ----------
-    if verbose:
-        print(f"\nRows: {df.shape[0]}, Columns: {df.shape[1]}")
-        print(f"--- Data Cleaning Complete in {time.time() - start:.2f}s ---\n")
+    finally:
+        if spinner:
+            spinner.stop()
+
+    elapsed = time.time() - start
+
+    if elapsed < 60:
+        duration = f"{elapsed:.2f}s"
+    elif elapsed < 3600:
+        mins, secs = divmod(elapsed, 60)
+        duration = f"{int(mins)}m {secs:.0f}s"
+    else:
+        hours, rem = divmod(elapsed, 3600)
+        mins, secs = divmod(rem, 60)
+        duration = f"{int(hours)}h {int(mins)}m {secs:.0f}s"
+
+    print(f"\nData cleaned in {duration}")
+    print(f"Rows: {df.shape[0]}, Columns: {df.shape[1]}")
 
     return df
+
 
 def remove_duplicates(
     df,
@@ -168,7 +167,7 @@ def normalize_column_names(df, verbose=True):
 
             for o, n in renamed_pairs:
                 print(f"    - {o:<{max_len}} → {n}")
-            print(f"    ({len(renamed_pairs)} columns renamed)")
+            print(f"    ({len(renamed_pairs)} column(s) renamed)")
         else:
             print("    No renaming needed.")
 
@@ -197,7 +196,7 @@ def clean_text_columns(df, lowercase=True, verbose=True, categorical_mapping=Non
 
     if verbose:
         text_cols = df.select_dtypes(include="object").columns
-        print(f"  • Text columns cleaned ({len(text_cols)} columns)")
+        print(f"  • Text columns cleaned ({len(text_cols)} column(s)):")
         print("    - Stripped whitespace, standardized spacing, and normalized casing.")
 
     return df
@@ -236,7 +235,7 @@ def normalize_categorical_text(df, mapping=None, verbose=True):
             if unmapped:
                 preview = ', '.join(map(str, list(unmapped)[:3]))
                 more = '' if len(unmapped) <= 3 else '...'
-                print(f"    ⚠️ Unmapped values remain: {len(unmapped)} unique ({preview}{more})")
+                print(f"    Unmapped values remain: {len(unmapped)} unique ({preview}{more})")
 
 
     return df
@@ -520,7 +519,7 @@ def handle_outliers(df, method='cap', auto_detect=True, verbose=True):
             print(f"  • Total outliers removed: {outliers_removed}")
         elif method == 'cap' and outliers_capped:
             total_capped = sum(outliers_capped.values())
-            print(f"  • Outliers capped across {len(outliers_capped)} columns ({total_capped} total).")
+            print(f"  • Outliers capped across {len(outliers_capped)} column(s) ({total_capped} total).")
         else:
             print("  • No significant outliers detected.")
 

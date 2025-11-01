@@ -1,0 +1,35 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+
+# Virtual environment
+venv/
+env/
+ENV/
+.venv
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Data files (ignore all except sample)
+data/*.csv
+data/*.xlsx
+data/*.xls
+!data/retail_sales.csv
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+
+# Development/testing files
+new_funcs.py
